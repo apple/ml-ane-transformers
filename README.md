@@ -90,3 +90,8 @@ Note that 4 of the 606 operations in the optimized model are executed on the CPU
 
 ## A Note on Unit Tests
 The unit tests measure, among other things, the ANE speed-up factor. Since the device spec for this reference implementation is M1 or newer chips for the Mac and A14 and newer chips for the iPhone and iPad, the speed-up unit tests will print a warning message if executed on devices outside of this spec. Even if the model is generated using an out of spec Mac, the model should work as expected on in-spec devices.
+
+## Installation & Troubleshooting
+- Fastest: `pip install ane_transformers`
+- Locally editable: `pip install -e .`
+- If installation fails with `ERROR: Failed building wheel for tokenizers` or `error: can't find Rust compiler`, please follow this [solution](https://github.com/huggingface/transformers/issues/2831#issuecomment-592724471)
