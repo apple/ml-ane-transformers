@@ -22,6 +22,26 @@ WARN_MSG_FOR_DICT_RETURN = \
     "coremltools does not support dict outputs. Please set return_dict=False"
 
 
+# Note: torch.nn.LayerNorm and ane_transformers.reference.layer_norm.LayerNormANE
+# apply scale and bias terms in opposite orders. In order to accurately restore a
+# state_dict trained using the former into the the latter, we adjust the bias term
+def correct_for_bias_scale_order_inversion(state_dict, prefix, local_metadata,
+                                           strict, missing_keys,
+                                           unexpected_keys, error_msgs):
+    state_dict[prefix +
+               'bias'] = state_dict[prefix + 'bias'] / state_dict[prefix +
+                                                                  'weight']
+    return state_dict
+
+
+class LayerNormANE(LayerNormANE):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._register_load_state_dict_pre_hook(
+            correct_for_bias_scale_order_inversion)
+
+
 class Embeddings(modeling_distilbert.Embeddings):
     """ Embeddings module optimized for Apple Neural Engine
     """
