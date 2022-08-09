@@ -12,7 +12,7 @@ import copy
 import torch
 import torch.nn as nn
 
-from layer_norm import LayerNormANE
+from .layer_norm import LayerNormANE
 
 
 class TransformerDecoder(nn.Module):

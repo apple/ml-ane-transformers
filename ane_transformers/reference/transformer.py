@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 
-import encoder, decoder, multihead_attention, ffn
+from . import encoder, decoder, multihead_attention, ffn
 
 
 class AppleNeuralEngineTransformer(nn.Module):
