@@ -73,7 +73,7 @@ class LayerNormANE(nn.Module):
         out = zero_mean * denom
 
         if self.elementwise_affine:
-            out = (out + self.bias.view(1, self.num_channels, 1, 1)
-                   ) * self.weight.view(1, self.num_channels, 1, 1)
+            out = (out * self.weight.view(1, self.num_channels, 1, 1)
+                   ) + self.bias.view(1, self.num_channels, 1, 1)
 
         return out
