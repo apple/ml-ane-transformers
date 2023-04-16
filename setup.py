@@ -14,7 +14,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Apple Inc.',
     install_requires=[
-        "torch>=1.10.0,<=1.11.0",
+        "torch>=2.0.0",
         "coremltools>=5.2.0",
         "transformers>=4.18.0",
         "protobuf>=3.1.0,<=3.20.1",
