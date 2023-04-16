@@ -3,6 +3,7 @@
 # Copyright (C) 2022 Apple Inc. All Rights Reserved.
 #
 
+import einops
 from ane_transformers import testing_utils
 import collections
 import coremltools as ct
@@ -62,7 +63,12 @@ class TestDistilBertForSequenceClassification(unittest.TestCase):
         cls.models[
             'test'] = ane_transformers.DistilBertForSequenceClassification(
                 cls.models['ref'].config).eval()
-        cls.models['test'].load_state_dict(cls.models['ref'].state_dict())
+        ref_model_state = cls.models['ref'].state_dict()
+        ref_model_state['pre_classifier.weight'] = einops.rearrange(
+            ref_model_state['pre_classifier.weight'], 'd n -> d n 1 1')
+        ref_model_state['classifier.weight'] = einops.rearrange(
+            ref_model_state['classifier.weight'], 'n d -> n d 1 1')
+        cls.models['test'].load_state_dict(ref_model_state)
         logger.info("Initialized and restored test model")
 
         # Cache tokenized inputs and forward pass results on both the reference and test networks
