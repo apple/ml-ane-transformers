@@ -2,6 +2,7 @@
 # For licensing see accompanying LICENSE.md file.
 # Copyright (C) 2022 Apple Inc. All Rights Reserved.
 #
+import re
 
 from ane_transformers.reference.layer_norm import LayerNormANE
 
@@ -520,14 +521,28 @@ class DistilBertForMultipleChoice(
         return ((loss, ) + output) if loss is not None else output
 
 
+_LINEAR_TO_CONV2D_LAYERS_RE = re.compile(r".*({})\.weight".format(
+    "|".join([
+        "q_lin",
+        "k_lin",
+        "v_lin",
+        "out_lin",
+        "lin1",
+        "lin2",
+        "classifier",
+        "pre_classifier",
+        "vocab_transform",
+        "vocab_projector",
+        "qa_outputs",
+    ])
+))
+
+
 def linear_to_conv2d_map(state_dict, prefix, local_metadata, strict,
                          missing_keys, unexpected_keys, error_msgs):
     """ Unsqueeze twice to map nn.Linear weights to nn.Conv2d weights
     """
     for k in state_dict:
-        is_internal_proj = all(substr in k for substr in ['lin', '.weight'])
-        is_output_proj = all(substr in k
-                             for substr in ['classifier', '.weight'])
-        if is_internal_proj or is_output_proj:
+        if _LINEAR_TO_CONV2D_LAYERS_RE.match(k):
             if len(state_dict[k].shape) == 2:
                 state_dict[k] = state_dict[k][:, :, None, None]

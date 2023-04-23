@@ -9,7 +9,6 @@ import coremltools as ct
 import logging
 import numpy as np
 import unittest
-import time
 
 import torch
 
@@ -32,6 +31,10 @@ SEQUENCE_CLASSIFICATION_TEST_SET = collections.OrderedDict([
     ("This is not what I expected!", "NEGATIVE"),
 ])
 
+MASKED_LM_MODEL = 'distilbert-base-uncased'
+QUESTION_ANSWERING_MODEL = 'distilbert-base-uncased-distilled-squad'
+TOKEN_CLASSIFICATION_MODEL = 'elastic/distilbert-base-uncased-finetuned-conll03-english'
+MULTIPLE_CHOICE_MODEL = 'Gladiator/distilbert-base-uncased_swag_mqa'
 
 class TestDistilBertForSequenceClassification(unittest.TestCase):
     """
@@ -189,6 +192,57 @@ class TestDistilBertForSequenceClassification(unittest.TestCase):
                 "does not have Apple Silicon (e.g. M1) so ANE is unavailable for this test. This model will still work as efficiently as expected on " \
                 "on devices with A14 and newer or M1 or newer chips."
             )
+
+
+class TestDistilBertLoadState(unittest.TestCase):
+    """
+    Test load_state_dict compatibility.
+    """
+
+    test_params = (
+        (
+            MASKED_LM_MODEL,
+            transformers.AutoModelForMaskedLM,
+            ane_transformers.DistilBertForMaskedLM,
+        ),
+        (
+            QUESTION_ANSWERING_MODEL,
+            transformers.AutoModelForQuestionAnswering,
+            ane_transformers.DistilBertForQuestionAnswering,
+        ),
+        (
+            TOKEN_CLASSIFICATION_MODEL,
+            transformers.AutoModelForTokenClassification,
+            ane_transformers.DistilBertForTokenClassification,
+        ),
+        (
+            MULTIPLE_CHOICE_MODEL,
+            transformers.AutoModelForMultipleChoice,
+            ane_transformers.DistilBertForMultipleChoice,
+        ),
+    )
+
+    def test_load_state(self):
+        for model_name, auto_model_cls, ane_model_cls in self.test_params:
+            with self.subTest(ane_model_cls=ane_model_cls):
+                try:
+                    # Instantiate the reference model from an exemplar pre-trained
+                    # model hosted on huggingface.co/models
+                    reference_model = auto_model_cls.from_pretrained(
+                        model_name,
+                        return_dict=False,
+                        torchscript=True,
+                    ).eval()
+                except Exception as e:
+                    raise RuntimeError(
+                        "Failed to download reference model from huggingface.co/models!"
+                    ) from e
+                logger.info("Downloaded reference model from huggingface.co/models")
+
+                # Initialize an ANE equivalent model and restore the checkpoint
+                test_model = ane_model_cls(reference_model.config).eval()
+                test_model.load_state_dict(reference_model.state_dict())
+                logger.info("Initialized and restored test model")
 
 
 if __name__ == "__main__":
